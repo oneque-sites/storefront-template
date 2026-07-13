@@ -1,0 +1,25 @@
+{
+  "name": "@oneque/storefront-starter",
+  "version": "0.1.0",
+  "private": true,
+  "description": "원큐(Oneque) 스토어프론트 스타터 — @oneque/client 위에서 도는 Next.js 쇼핑몰/예약 사이트 골격. AI 바이브코딩의 출발점.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "validate": "node scripts/validate-storefront.mjs"
+  },
+  "dependencies": {
+    "@oneque/client": "file:./vendor/oneque-client-0.4.0.tgz",
+    "next": "16.2.6",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "^5"
+  }
+}

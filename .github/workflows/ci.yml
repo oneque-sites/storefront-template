@@ -1,0 +1,43 @@
+# 원큐(Oneque) 스토어프론트 Tier2 게이팅 CI.
+#
+# 백엔드 BuildGate 가 GitHub Checks API 로 이 워크플로의 성공을 확인한 뒤에만
+# Tier2(코드 배포) 를 진행한다. 세 단계는 27-real-codegen-deploy-pipeline.md §7.1·§9.3(T0)
+# 의 정본:
+#   1) validate     — 키트 validator(scripts/validate-storefront.mjs, llms.txt §5 규약)
+#   2) tsc --noEmit  — 타입 정합
+#   3) next build    — 실제 빌드 성공
+name: storefront-ci
+
+on:
+  push:
+    # main 배포 + codegen 작업 브랜치(oneq/change-*) — 게이트가 브랜치 CI 결론을 읽으려면 브랜치 push 에도 돌아야 함.
+    # oneq/client-upgrade-* 는 client-upgrade.yml 이 전담(lockfile 재생성 전 SHA 에서 npm ci 가 헛도는 red 방지).
+    branches: [main, "oneq/change-*"]
+  pull_request:
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    env:
+      # 빌드 시점에 백엔드 접속이 필요 없도록 안전한 기본값만 주입(SSR fetch 는 런타임에 일어남).
+      ONEQ_API_BASE: http://localhost:8100
+      ONEQ_TENANT: birdlab
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Validate (키트 validator)
+        run: npm run validate
+
+      - name: Typecheck (tsc --noEmit)
+        run: npm run typecheck
+
+      - name: Build (next build)
+        run: npm run build
