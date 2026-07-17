@@ -5,6 +5,7 @@ import {useRouter} from "next/navigation";
 import Link from "next/link";
 import type {ConsentInput, SocialProvider} from "@oneque/client";
 import {CONSENT_STORAGE_KEY, STATE_STORAGE_KEY, isConsentError} from "@/lib/oauth";
+import {notifyAuthHintChange} from "@/lib/useAuthHint";
 
 /**
  * OAuth 콜백 처리(클라이언트). URL 의 code 를 읽어 서버 라우트 `/api/auth/social` 로 교환 요청한다
@@ -70,6 +71,8 @@ export function CallbackHandler({
                 );
                 return;
             }
+            // 서버가 응답에 로그인 힌트 쿠키를 심었다 — 헤더가 즉시 로그인 크롬으로 갱신되게 알린다.
+            notifyAuthHintChange();
             router.replace("/mypage");
             router.refresh();
         })();

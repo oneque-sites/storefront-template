@@ -1,6 +1,7 @@
 import {NextResponse} from "next/server";
 import {oneq} from "@/lib/oneque";
 import {clearCustomerTokens, getAccessToken} from "@/lib/session";
+import {setAuthHint} from "@/lib/authHint";
 
 /** 로그아웃 — 백엔드 세션 폐기 + 쿠키 삭제. */
 export async function POST() {
@@ -9,5 +10,8 @@ export async function POST() {
         await oneq.logout(accessToken).catch(() => undefined);
     }
     await clearCustomerTokens();
-    return NextResponse.json({ok: true});
+    const response = NextResponse.json({ok: true});
+    // 세션 종료 → 낙관적 로그인 힌트도 비운다(헤더가 즉시 익명 크롬으로 돌아가게).
+    setAuthHint(response, false);
+    return response;
 }

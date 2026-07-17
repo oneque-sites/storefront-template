@@ -4,6 +4,7 @@ import {useState, useTransition} from "react";
 import {useRouter} from "next/navigation";
 import type {ConsentInput} from "@oneque/client";
 import {isConsentError} from "@/lib/oauth";
+import {notifyAuthHintChange} from "@/lib/useAuthHint";
 
 /**
  * 개발 전용 테스트 로그인. 실제 OAuth 없이 임의 code(=subject)로 서버 라우트 `/api/auth/social`
@@ -37,6 +38,8 @@ export function TestLogin({consents, disabled}: {consents: ConsentInput[]; disab
                 );
                 return;
             }
+            // 서버가 응답에 로그인 힌트 쿠키를 심었다 — 헤더가 즉시 로그인 크롬으로 갱신되게 알린다.
+            notifyAuthHintChange();
             router.push("/mypage");
             router.refresh();
         });

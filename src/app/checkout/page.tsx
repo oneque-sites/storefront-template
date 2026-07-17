@@ -3,8 +3,15 @@
 import {useState, useTransition} from "react";
 
 /**
- * 결제 폼. 구매자 연락처는 게스트 주문 조회 크리덴셜이라 필수. 제출하면 주문 생성 + 결제세션 →
- * paymentUrl 로 이동한다(페이원큐 결제창). 결과는 백엔드 웹훅이 확정하므로 프론트는 이동만.
+ * 결제 폼. 구매자 연락처는 게스트 주문 조회 크리덴셜이라 필수.
+ *
+ * 제출하면 주문 생성 + 결제 시작 → **벤더에 따라 두 갈래**(테넌트가 자기 PG 를 고른다 — 기본 TOSS):
+ *  - **위젯형**(토스): `widget` 이 오면 `/payment/widget` 으로 보내 이 사이트에서 결제창을 띄우고,
+ *    성공 콜백을 `/api/payment/confirm` 으로 넘겨 승인을 확정한다.
+ *  - **리다이렉트형**(PayOneQ 등): `paymentUrl` 로 보내면 끝.
+ *
+ * 어느 쪽이든 **결제 확정은 백엔드**가 한다 — 이 화면의 성공/실패 표시는 UX 일 뿐 주문 완료 근거가
+ * 아니다. 상태는 항상 `/orders/{orderNo}` 로 확인한다.
  */
 export default function CheckoutPage() {
     const [form, setForm] = useState({buyerName: "", buyerPhone: "", buyerEmail: "", address1: ""});
@@ -33,7 +40,17 @@ export default function CheckoutPage() {
                 setError(data.message ?? "결제에 실패했습니다.");
                 return;
             }
-            // 결제창으로 이동. 실제 결제 확정은 백엔드 웹훅이 한다.
+            if (data.widget) {
+                // 위젯형 — 디스크립터를 넘겨 결제창 페이지로. URL 이 아니라 sessionStorage 로 넘긴다
+                // (새로고침·공유로 새지 않게). 어차피 금액은 서버가 저장값으로 PG 에 묻는다.
+                sessionStorage.setItem(
+                    "oneq_payment_widget",
+                    JSON.stringify({...data.widget, orderNo: data.orderNo, phone: form.buyerPhone}),
+                );
+                window.location.href = "/payment/widget";
+                return;
+            }
+            // 리다이렉트형 — 결제창으로 이동. 실제 결제 확정은 백엔드 웹훅이 한다.
             window.location.href = data.paymentUrl;
         });
     };

@@ -11,7 +11,8 @@
     "validate": "node scripts/validate-storefront.mjs"
   },
   "dependencies": {
-    "@oneque/client": "file:./vendor/oneque-client-0.4.0.tgz",
+    "@oneque/client": "file:./vendor/oneque-client-0.5.2.tgz",
+    "@tosspayments/tosspayments-sdk": "^2.7.1",
     "next": "16.2.6",
     "react": "19.2.4",
     "react-dom": "19.2.4"
