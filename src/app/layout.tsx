@@ -2,6 +2,7 @@ import type {Metadata, Viewport} from "next";
 import type {ReactNode} from "react";
 import {SiteHeader} from "@/components/SiteHeader";
 import {oneq} from "@/lib/oneque";
+import {parseSeo} from "@/lib/seo";
 import {fallbackSiteName} from "@/lib/site";
 
 /**
@@ -17,26 +18,6 @@ export const revalidate = 3600;
 export const viewport: Viewport = {width: "device-width", initialScale: 1};
 
 /**
- * `seoDefaults` 는 opaque JSON 패스스루다(백엔드가 검증하지 않는다) — 어떤 쓰레기가 와도
- * throw 하지 않고 폴백 체인으로 강하해야 한다. 제목은 살아야 한다.
- *
- * 권장 구조: `{"title": "…", "description": "…"}`. 길이 제한·정규화는 하지 않는다(패스스루 철학 —
- * 쓰레기를 넣으면 자기 검색결과가 쓰레기가 되는 건 테넌트 몫이다).
- */
-function parseSeoDefaults(raw: string | null | undefined): {title?: string; description?: string} {
-    if (!raw) return {};
-    try {
-        const parsed = JSON.parse(raw) as Record<string, unknown>;
-        return {
-            title: typeof parsed.title === "string" ? parsed.title : undefined,
-            description: typeof parsed.description === "string" ? parsed.description : undefined,
-        };
-    } catch {
-        return {};
-    }
-}
-
-/**
  * 사이트 제목 — **거래처 것**이지 우리 것이 아니다.
  *
  * 홈에만 두지 않고 루트 layout 에 두는 이유: 제목은 layout 상속으로 전 라우트에 퍼진다. 홈만 고치면
@@ -48,7 +29,7 @@ function parseSeoDefaults(raw: string | null | undefined): {title?: string; desc
  */
 export async function generateMetadata(): Promise<Metadata> {
     const config = await oneq.getSiteConfig({tags: ["site-config"]}).catch(() => null);
-    const seo = parseSeoDefaults(config?.seoDefaults);
+    const seo = parseSeo(config?.seoDefaults);
     const siteName = seo.title ?? config?.companyName ?? fallbackSiteName();
     return {
         // 하위 라우트가 문자열 title 을 주면 "페이지제목 | 회사명" 이 된다([slug] 가 그렇다).

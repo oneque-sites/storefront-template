@@ -1,6 +1,8 @@
+import type {Metadata} from "next";
 import {notFound} from "next/navigation";
 import {OnequeError} from "@oneque/client";
 import {oneq} from "@/lib/oneque";
+import {parseSeo} from "@/lib/seo";
 import {siteUrl} from "@/lib/site";
 import {JsonLd, breadcrumbJsonLd, merchantReturnPolicyJsonLd, parsePolicies, productJsonLd} from "@/components/JsonLd";
 import {AddToCart} from "./AddToCart";
@@ -14,14 +16,44 @@ import {AddToCart} from "./AddToCart";
 export const dynamic = "force-static";
 export const revalidate = 300;
 
+/**
+ * ISR 캐시 태그(memo31 §0-1) — site-config(테마·레이아웃, 전 페이지)·products(카탈로그)·
+ * product:{slug}(이 상품만). 백엔드가 해당 태그로 이 상세만 콕 집어 revalidate 한다.
+ *
+ * generateMetadata 와 페이지가 **같은 인자로** 부르므로 Next request memoization 이 1회로 합친다 —
+ * 인자가 갈리면 조용히 2회가 된다.
+ */
+function loadProduct(slug: string) {
+    return oneq.getProduct(slug, {tags: ["site-config", "products", `product:${slug}`]});
+}
+
+/**
+ * 상품 제목 — sitemap 에 등재되는 라우트인데(sitemap.ts) 이게 없으면 루트 layout 의 제목을 상속해
+ * **모든 상품 상세가 상호 하나로** 검색·탭에 잡힌다. 상품명이 제목에 없으면 검색 유입의 절반은 없는 셈.
+ *
+ * layout 의 `title.template`(`%s | 상호`)을 타므로 여기선 상품명만 주면 "상품명 | 상호" 가 된다.
+ */
+export async function generateMetadata({params}: {params: Promise<{slug: string}>}): Promise<Metadata> {
+    const {slug} = await params;
+    // 404 면 notFound() 로 빠져 메타데이터를 낼 일이 없다(페이지도 같은 판정을 한다).
+    const product = await loadProduct(slug).catch((error) => {
+        if (error instanceof OnequeError && error.status === 404) notFound();
+        throw error;
+    });
+    const seo = parseSeo(product.seo);
+    return {
+        title: seo.title ?? product.name,
+        // 상품 설명이 길 수 있으나 자르지 않는다 — 검색엔진이 알아서 자른다. 없으면 생략.
+        description: seo.description ?? product.description ?? undefined,
+    };
+}
+
 export default async function ProductPage({params}: {params: Promise<{slug: string}>}) {
     const {slug} = await params;
 
     let product;
     try {
-        // ISR 캐시 태그(memo31 §0-1) — site-config(테마·레이아웃, 전 페이지)·products(카탈로그)·
-        // product:{slug}(이 상품만). 백엔드가 해당 태그로 이 상세만 콕 집어 revalidate 한다.
-        product = await oneq.getProduct(slug, {tags: ["site-config", "products", `product:${slug}`]});
+        product = await loadProduct(slug);
     } catch (error) {
         if (error instanceof OnequeError && error.status === 404) notFound();
         throw error;

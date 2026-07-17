@@ -3,6 +3,7 @@ import type {Metadata} from "next";
 import {notFound} from "next/navigation";
 import {SectionRenderer, needsProducts} from "@/components/sections/SectionRenderer";
 import {oneq} from "@/lib/oneque";
+import {parseSeo} from "@/lib/seo";
 
 /**
  * 고정 페이지 (RSC · ISR) — 섹션이 있으면 섹션을, 없으면 레거시 본문을.
@@ -33,15 +34,10 @@ async function loadPage(slug: string) {
 export async function generateMetadata({params}: {params: Promise<{slug: string}>}): Promise<Metadata> {
     const {slug} = await params;
     const page = await loadPage(slug);
-    // seo 도 raw JSON 패스스루라 파싱이 실패해도 제목은 살아야 한다.
-    let description: string | undefined;
-    try {
-        const seo = page.seo ? (JSON.parse(page.seo) as {description?: string}) : null;
-        description = seo?.description;
-    } catch {
-        description = undefined;
-    }
-    return {title: page.title, description};
+    // seo 는 raw JSON 패스스루 — parseSeo 가 어떤 쓰레기도 {} 로 강하시킨다(제목은 살아야 한다).
+    const seo = parseSeo(page.seo);
+    // layout 의 title.template(`%s | 상호`)을 타서 "페이지제목 | 상호" 가 된다.
+    return {title: seo.title ?? page.title, description: seo.description};
 }
 
 export default async function StaticPage({params}: {params: Promise<{slug: string}>}) {
