@@ -59,13 +59,13 @@ export default async function StaticPage({params}: {params: Promise<{slug: strin
 
     return (
         <main>
-            <h1 style={{color: "var(--oneq-primary)"}}>{page.title}</h1>
+            <h1 className="text-foreground">{page.title}</h1>
             {sections.length > 0 ? (
                 sections.map((s, i) => <SectionRenderer key={i} section={s} products={products} />)
             ) : page.content ? (
                 // 레거시 마크다운 본문 — 섹션이 없는 옛 페이지. 마크다운 렌더러를 안 들이고
                 // 문단으로 떨군다. 서식이 필요하면 섹션으로 옮기는 게 정본 경로다.
-                <div style={{lineHeight: 1.8, whiteSpace: "pre-wrap"}}>{page.content}</div>
+                <div className="leading-loose whitespace-pre-wrap">{page.content}</div>
             ) : null}
         </main>
     );

@@ -1,9 +1,11 @@
+import "./globals.css";
 import type {Metadata, Viewport} from "next";
 import type {ReactNode} from "react";
 import {SiteHeader} from "@/components/SiteHeader";
 import {oneq} from "@/lib/oneque";
 import {parseSeo} from "@/lib/seo";
 import {fallbackSiteName} from "@/lib/site";
+import {parseThemeColors} from "@/lib/theme";
 
 /**
  * 자체 revalidate 가 없는 정적 라우트(checkout·payment/* 등)에 갱신 주기를 준다.
@@ -40,12 +42,20 @@ export async function generateMetadata(): Promise<Metadata> {
     };
 }
 
-export default function RootLayout({children}: {children: ReactNode}) {
+export default async function RootLayout({children}: {children: ReactNode}) {
+    // generateMetadata 와 **같은 인자로** 부른다 → request memoization 이 1회로 합친다(태그가 갈리면
+    // 조용히 2회가 된다). 태그만 실은 fetch 는 동적 opt-in 이 아니므로 정적성을 깨지 않는다(§6).
+    const config = await oneq.getSiteConfig({tags: ["site-config"]}).catch(() => null);
+    // themeColors → CSS 변수. inline style 은 어떤 스타일시트보다 우선하므로 @theme 기본값을 덮는다.
+    const {cssVars} = parseThemeColors(config?.themeColors);
+
     return (
-        <html lang="ko">
-            <body style={{fontFamily: "system-ui, sans-serif", maxWidth: 880, margin: "0 auto", padding: 16}}>
-                <SiteHeader />
-                {children}
+        <html lang="ko" style={cssVars}>
+            <body className="bg-background text-foreground font-sans antialiased">
+                <div className="mx-auto max-w-4xl px-4">
+                    <SiteHeader />
+                    {children}
+                </div>
             </body>
         </html>
     );

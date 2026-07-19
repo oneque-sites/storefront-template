@@ -19,7 +19,7 @@ export const revalidate = 600;
 export default async function PoliciesPage() {
     // site-config 태그 — 관리자가 정책을 고치면 백엔드가 이 태그로 이 페이지를 콕 집어 무효화한다.
     const config = await oneq.getSiteConfig({tags: ["site-config"]}).catch(() => null);
-    if (!config) return <main><h1>구매 정책</h1><p>정보를 불러오지 못했습니다.</p></main>;
+    if (!config) return <main className="py-8"><h1>구매 정책</h1><p>정보를 불러오지 못했습니다.</p></main>;
 
     const policies = parsePolicies(config.commercePolicies);
     const fee = config.defaultReturnShippingFee;
@@ -31,30 +31,32 @@ export default async function PoliciesPage() {
     ].filter((s) => s.body || s.extra);
 
     return (
-        <main>
+        <main className="py-8">
             <h1>구매 정책</h1>
 
             {sections.length === 0 ? (
-                <p style={{color: "#888"}}>등록된 정책이 없습니다.</p>
+                <p className="text-muted">등록된 정책이 없습니다.</p>
             ) : (
-                sections.map((s) => (
-                    <section key={s.title} style={{marginBottom: 20}}>
-                        <h2>{s.title}</h2>
-                        {s.extra && <p>{s.extra}</p>}
-                        {s.body && <p style={{whiteSpace: "pre-wrap"}}>{s.body}</p>}
-                    </section>
-                ))
+                <div className="space-y-5">
+                    {sections.map((s) => (
+                        <section key={s.title} className="space-y-1">
+                            <h2>{s.title}</h2>
+                            {s.extra && <p>{s.extra}</p>}
+                            {s.body && <p className="whitespace-pre-wrap">{s.body}</p>}
+                        </section>
+                    ))}
+                </div>
             )}
 
             {/* 사업자 정보 — 정책 유무와 무관하게 표시 대상이다. */}
-            <section style={{marginTop: 32, paddingTop: 16, borderTop: "1px solid #ddd", color: "#666", fontSize: 14}}>
-                <h2 style={{fontSize: 16}}>사업자 정보</h2>
-                <p style={{margin: "4px 0"}}>{config.companyName}</p>
-                {config.ceoName && <p style={{margin: "4px 0"}}>대표: {config.ceoName}</p>}
-                {config.bizRegNo && <p style={{margin: "4px 0"}}>사업자등록번호: {config.bizRegNo}</p>}
-                {config.address && <p style={{margin: "4px 0"}}>{config.address}</p>}
-                {config.tel && <p style={{margin: "4px 0"}}>전화: {config.tel}</p>}
-                {config.email && <p style={{margin: "4px 0"}}>이메일: {config.email}</p>}
+            <section className="mt-8 pt-4 border-t border-border text-muted text-sm space-y-1">
+                <h2 className="text-base">사업자 정보</h2>
+                <p>{config.companyName}</p>
+                {config.ceoName && <p>대표: {config.ceoName}</p>}
+                {config.bizRegNo && <p>사업자등록번호: {config.bizRegNo}</p>}
+                {config.address && <p>{config.address}</p>}
+                {config.tel && <p>전화: {config.tel}</p>}
+                {config.email && <p>이메일: {config.email}</p>}
             </section>
         </main>
     );

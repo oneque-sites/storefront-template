@@ -69,7 +69,7 @@ export default async function ProductPage({params}: {params: Promise<{slug: stri
     const base = siteUrl();
 
     return (
-        <main>
+        <main className="py-8">
             {/* 검색·AI 발견용 구조화 데이터(memo 50 W1) — 아래 보이는 내용과 반드시 일치시킨다. */}
             <JsonLd data={productJsonLd(product, rating, base, returnPolicy)} />
             <JsonLd
@@ -86,10 +86,10 @@ export default async function ProductPage({params}: {params: Promise<{slug: stri
                     src={`/media/${product.coverAssetId}`}
                     alt={product.name}
                     loading="lazy"
-                    style={{maxWidth: "100%", height: "auto", borderRadius: 8}}
+                    className="max-w-full h-auto rounded-lg my-4"
                 />
             )}
-            {product.description && <p style={{whiteSpace: "pre-wrap"}}>{product.description}</p>}
+            {product.description && <p className="whitespace-pre-wrap">{product.description}</p>}
             <AddToCart product={product} />
         </main>
     );

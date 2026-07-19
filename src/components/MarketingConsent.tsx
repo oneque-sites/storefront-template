@@ -54,16 +54,17 @@ export function MarketingConsent() {
         });
     };
 
-    if (!loaded) return <p style={{color: "#888"}}>마케팅 수신 설정을 불러오는 중…</p>;
+    if (!loaded) return <p className="text-muted">마케팅 수신 설정을 불러오는 중…</p>;
 
     return (
-        <section style={{marginTop: 24, paddingTop: 16, borderTop: "1px solid #eee"}}>
-            <h2 style={{fontSize: "1rem"}}>마케팅 수신 동의</h2>
-            <div style={{display: "grid", gap: 6, maxWidth: 320}}>
+        <section className="mt-6 pt-4 border-t border-border">
+            <h2 className="text-base">마케팅 수신 동의</h2>
+            <div className="grid gap-1.5 max-w-xs">
                 {MARKETING.map((m) => (
-                    <label key={m.type} style={{display: "flex", alignItems: "center", gap: 8}}>
+                    <label key={m.type} className="flex items-center gap-2">
                         <input
                             type="checkbox"
+                            className="w-auto"
                             checked={Boolean(granted[m.type])}
                             disabled={pending}
                             onChange={(e) => save(m.type, e.target.checked)}
@@ -72,7 +73,7 @@ export function MarketingConsent() {
                     </label>
                 ))}
             </div>
-            {message && <p style={{color: "#888", fontSize: "0.85rem"}}>{message}</p>}
+            {message && <p className="text-muted text-sm mt-2">{message}</p>}
         </section>
     );
 }

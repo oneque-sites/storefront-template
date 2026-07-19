@@ -20,34 +20,26 @@ export function BeforeAfterGallerySection({config}: {config: string | null}) {
     if (items.length === 0) return null;
 
     return (
-        <section style={{marginBottom: 32}}>
-            <div
-                style={{
-                    display: "grid",
-                    gap: 16,
-                    gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-                }}
-            >
+        <section className="mb-12">
+            <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(260px,1fr))]">
                 {items.map((item, i) => (
-                    <figure key={i} style={{margin: 0}}>
-                        <div style={{display: "flex", gap: 4}}>
+                    <figure key={i} className="m-0">
+                        <div className="flex gap-1">
                             <img
                                 src={mediaSrc(item.beforeAssetId)}
                                 alt={item.caption ? `${item.caption} 전` : "시술 전"}
                                 loading="lazy"
-                                style={{width: "50%", aspectRatio: "1", objectFit: "cover", borderRadius: 4}}
+                                className="w-1/2 aspect-square object-cover rounded"
                             />
                             <img
                                 src={mediaSrc(item.afterAssetId)}
                                 alt={item.caption ? `${item.caption} 후` : "시술 후"}
                                 loading="lazy"
-                                style={{width: "50%", aspectRatio: "1", objectFit: "cover", borderRadius: 4}}
+                                className="w-1/2 aspect-square object-cover rounded"
                             />
                         </div>
                         {item.caption && (
-                            <figcaption style={{marginTop: 6, fontSize: 14, opacity: 0.75}}>
-                                {item.caption}
-                            </figcaption>
+                            <figcaption className="text-sm text-muted mt-1.5">{item.caption}</figcaption>
                         )}
                     </figure>
                 ))}

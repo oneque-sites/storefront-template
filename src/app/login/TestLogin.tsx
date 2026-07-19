@@ -5,6 +5,7 @@ import {useRouter} from "next/navigation";
 import type {ConsentInput} from "@oneque/client";
 import {isConsentError} from "@/lib/oauth";
 import {notifyAuthHintChange} from "@/lib/useAuthHint";
+import {Button} from "@/components/ui/Button";
 
 /**
  * 개발 전용 테스트 로그인. 실제 OAuth 없이 임의 code(=subject)로 서버 라우트 `/api/auth/social`
@@ -46,18 +47,18 @@ export function TestLogin({consents, disabled}: {consents: ConsentInput[]; disab
     };
 
     return (
-        <section style={{marginTop: 24, paddingTop: 16, borderTop: "1px solid #eee"}}>
-            <h2 style={{fontSize: "1rem"}}>개발용 테스트 로그인</h2>
-            <p style={{color: "#888", fontSize: "0.85rem"}}>
+        <section className="mt-6 pt-4 border-t border-border">
+            <h2 className="text-base">개발용 테스트 로그인</h2>
+            <p className="text-muted text-sm">
                 실제 OAuth 없이 code(=subject)로 세션을 발급합니다. 백엔드 test-provider-enabled=true 필요.
             </p>
-            <form onSubmit={submit} style={{display: "flex", gap: 8}}>
-                <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="subject" />
-                <button type="submit" disabled={pending || disabled}>
+            <form onSubmit={submit} className="flex gap-2 mt-2">
+                <input className="flex-1" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="subject" />
+                <Button type="submit" disabled={pending || disabled}>
                     {pending ? "…" : "테스트 로그인"}
-                </button>
+                </Button>
             </form>
-            {error && <p style={{color: "crimson"}}>{error}</p>}
+            {error && <p className="text-danger mt-2">{error}</p>}
         </section>
     );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import {useState, useTransition} from "react";
+import {Button} from "@/components/ui/Button";
 
 /**
  * 결제 폼. 구매자 연락처는 게스트 주문 조회 크리덴셜이라 필수.
@@ -56,15 +57,15 @@ export default function CheckoutPage() {
     };
 
     return (
-        <main>
+        <main className="py-8">
             <h1>결제</h1>
-            <form onSubmit={submit} style={{display: "grid", gap: 8, maxWidth: 360}}>
+            <form onSubmit={submit} className="grid gap-3 max-w-sm">
                 <input required placeholder="이름" value={form.buyerName} onChange={set("buyerName")} />
                 <input required placeholder="연락처 (주문 조회에 사용)" value={form.buyerPhone} onChange={set("buyerPhone")} />
                 <input placeholder="이메일 (선택)" value={form.buyerEmail} onChange={set("buyerEmail")} />
                 <input placeholder="배송지 주소 (재화면)" value={form.address1} onChange={set("address1")} />
-                <button type="submit" disabled={pending}>{pending ? "처리 중…" : "결제하기"}</button>
-                {error && <p style={{color: "crimson"}}>{error}</p>}
+                <Button type="submit" disabled={pending}>{pending ? "처리 중…" : "결제하기"}</Button>
+                {error && <p className="text-danger text-sm">{error}</p>}
             </form>
         </main>
     );

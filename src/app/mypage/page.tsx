@@ -34,22 +34,22 @@ export default async function MyPage({searchParams}: {searchParams: Promise<{r?:
     }
 
     return (
-        <main>
+        <main className="py-8">
             <h1>마이페이지</h1>
-            <dl style={{display: "grid", gridTemplateColumns: "auto 1fr", gap: "4px 16px", maxWidth: 480}}>
-                <dt style={{color: "#888"}}>이름</dt>
-                <dd style={{margin: 0}}>{me.name ?? "-"}</dd>
-                <dt style={{color: "#888"}}>이메일</dt>
-                <dd style={{margin: 0}}>{me.email ?? "-"}</dd>
-                <dt style={{color: "#888"}}>연락처</dt>
-                <dd style={{margin: 0}}>{me.phone ?? "-"}</dd>
-                <dt style={{color: "#888"}}>customerKey</dt>
-                <dd style={{margin: 0}}>
+            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 max-w-md">
+                <dt className="text-muted">이름</dt>
+                <dd className="m-0">{me.name ?? "-"}</dd>
+                <dt className="text-muted">이메일</dt>
+                <dd className="m-0">{me.email ?? "-"}</dd>
+                <dt className="text-muted">연락처</dt>
+                <dd className="m-0">{me.phone ?? "-"}</dd>
+                <dt className="text-muted">customerKey</dt>
+                <dd className="m-0">
                     <code>{me.customerKey}</code>
                 </dd>
             </dl>
             <MarketingConsent />
-            <div style={{marginTop: 16}}>
+            <div className="mt-4">
                 <LogoutButton />
             </div>
         </main>

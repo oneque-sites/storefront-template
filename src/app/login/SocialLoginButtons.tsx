@@ -9,6 +9,7 @@ import {
     buildAuthorizeUrl,
     callbackPath,
 } from "@/lib/oauth";
+import {Button} from "@/components/ui/Button";
 
 /**
  * 카카오/네이버/구글 소셜 로그인 버튼. 클릭하면 provider 의 OAuth authorize URL 로 리다이렉트한다.
@@ -39,11 +40,11 @@ export function SocialLoginButtons({
     };
 
     return (
-        <div style={{display: "grid", gap: 8, maxWidth: 320}}>
+        <div className="grid gap-2 max-w-xs">
             {SOCIAL_PROVIDERS.map((p) => (
-                <button key={p} type="button" onClick={() => start(p)} disabled={disabled}>
+                <Button key={p} variant="outline" className="w-full" onClick={() => start(p)} disabled={disabled}>
                     {PROVIDER_CONFIG[p].label}로 로그인
-                </button>
+                </Button>
             ))}
         </div>
     );

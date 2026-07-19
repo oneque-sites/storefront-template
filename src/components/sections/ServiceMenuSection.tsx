@@ -21,37 +21,22 @@ export function ServiceMenuSection({
     if (items.length === 0) return null;
 
     return (
-        <section style={{marginBottom: 32}}>
-            <ul
-                style={{
-                    listStyle: "none",
-                    padding: 0,
-                    margin: 0,
-                    display: "grid",
-                    gap: 12,
-                    gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
-                }}
-            >
+        <section className="mb-12">
+            <ul className="grid list-none gap-3 p-0 m-0 grid-cols-[repeat(auto-fill,minmax(240px,1fr))]">
                 {items.map((p) => (
-                    <li key={p.id} style={{border: "1px solid var(--oneq-primary)", borderRadius: 8, padding: 12}}>
-                        <Link href={`/products/${p.slug}`} style={{color: "inherit", textDecoration: "none"}}>
+                    <li key={p.id} className="rounded-xl border border-border bg-background p-4">
+                        <Link href={`/products/${p.slug}`} className="text-inherit no-underline">
                             {p.coverAssetId != null && (
                                 <img
                                     src={mediaSrc(p.coverAssetId)}
                                     alt={p.name}
                                     loading="lazy"
-                                    style={{
-                                        width: "100%",
-                                        aspectRatio: "4/3",
-                                        objectFit: "cover",
-                                        borderRadius: 4,
-                                        marginBottom: 8,
-                                    }}
+                                    className="w-full aspect-[4/3] object-cover rounded mb-2"
                                 />
                             )}
-                            <div style={{fontWeight: 600}}>{p.name}</div>
+                            <div className="font-semibold">{p.name}</div>
                             {p.priceFrom != null && (
-                                <div style={{marginTop: 4, color: "var(--oneq-primary)"}}>
+                                <div className="mt-1 text-primary">
                                     {Number(p.priceFrom).toLocaleString("ko-KR")}원~
                                 </div>
                             )}

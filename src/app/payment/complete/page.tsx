@@ -60,9 +60,9 @@ export default function PaymentCompletePage() {
     }, []);
 
     return (
-        <main>
+        <main className="py-8">
             <h1>결제 확인</h1>
-            <p>{message}</p>
+            <p className="text-muted">{message}</p>
         </main>
     );
 }

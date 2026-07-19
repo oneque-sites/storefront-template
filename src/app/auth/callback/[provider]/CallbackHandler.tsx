@@ -81,14 +81,14 @@ export function CallbackHandler({
     if (error) {
         return (
             <>
-                <p style={{color: "crimson"}}>{error}</p>
+                <p className="text-danger">{error}</p>
                 <p>
                     <Link href="/login">로그인으로 돌아가기</Link>
                 </p>
             </>
         );
     }
-    return <p style={{color: "#888"}}>잠시만 기다려 주세요…</p>;
+    return <p className="text-muted">잠시만 기다려 주세요…</p>;
 }
 
 /** 로그인 시작 때 sessionStorage 에 심은 동의 목록을 읽어 소비(제거)한다. 없거나 깨졌으면 undefined. */

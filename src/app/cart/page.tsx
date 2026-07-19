@@ -2,6 +2,7 @@ import Link from "next/link";
 import type {Cart} from "@oneque/client";
 import {oneq} from "@/lib/oneque";
 import {getShopSession} from "@/lib/session";
+import {buttonClasses, cn} from "@/components/ui/Button";
 import {CartActions} from "./CartActions";
 
 const EMPTY: Cart = {items: [], subtotal: 0, currency: "KRW"};
@@ -13,15 +14,15 @@ export default async function CartPage() {
     const cart = hasIdentity ? await oneq.getCart(session).catch(() => EMPTY) : EMPTY;
 
     return (
-        <main>
+        <main className="py-8">
             <h1>장바구니</h1>
             {cart.items.length === 0 ? (
                 <p>비어 있습니다. <Link href="/">상품 보러 가기</Link></p>
             ) : (
                 <>
-                    <ul>
+                    <ul className="divide-y divide-border list-none p-0">
                         {cart.items.map((line) => (
-                            <li key={line.variantId} style={{opacity: line.available ? 1 : 0.5}}>
+                            <li key={line.variantId} className={cn("py-3", !line.available && "opacity-50")}>
                                 {line.productName}
                                 {line.variantLabel ? ` · ${line.variantLabel}` : ""} × {line.quantity}
                                 {" — "}
@@ -32,11 +33,11 @@ export default async function CartPage() {
                             </li>
                         ))}
                     </ul>
-                    <p>
-                        <strong>합계 {cart.subtotal.toLocaleString()}원</strong>
-                    </p>
-                    <p>
-                        <Link href="/checkout">결제하기 →</Link>
+                    <p className="mt-4 font-semibold">합계 {cart.subtotal.toLocaleString()}원</p>
+                    <p className="mt-4">
+                        <Link href="/checkout" className={buttonClasses("primary", "no-underline")}>
+                            결제하기 →
+                        </Link>
                     </p>
                 </>
             )}

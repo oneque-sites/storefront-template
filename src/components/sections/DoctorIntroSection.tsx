@@ -13,19 +13,19 @@ export function DoctorIntroSection({config}: {config: string | null}) {
     if (!name) return null;
 
     return (
-        <section style={{display: "flex", gap: 20, alignItems: "flex-start", marginBottom: 32}}>
+        <section className="flex gap-5 items-start mb-12">
             {photoAssetId != null && (
                 <img
                     src={mediaSrc(photoAssetId)}
                     alt={name}
                     loading="lazy"
-                    style={{width: 140, height: 140, objectFit: "cover", borderRadius: 8, flexShrink: 0}}
+                    className="w-35 h-35 object-cover rounded-lg shrink-0"
                 />
             )}
             <div>
-                <h2 style={{margin: 0, color: "var(--oneq-primary)"}}>{name}</h2>
-                {title && <p style={{margin: "4px 0 12px", opacity: 0.75}}>{title}</p>}
-                {bio && <p style={{margin: 0, whiteSpace: "pre-wrap", lineHeight: 1.7}}>{bio}</p>}
+                <h2 className="text-primary">{name}</h2>
+                {title && <p className="mt-1 mb-3 text-muted">{title}</p>}
+                {bio && <p className="whitespace-pre-wrap leading-relaxed">{bio}</p>}
             </div>
         </section>
     );

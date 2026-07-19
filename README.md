@@ -75,6 +75,27 @@ npm run dev                    # http://localhost:3000
   (Next 16 은 fetch 를 기본 no-store 로 두어 `revalidate` 만으론 동적으로 남습니다 — `force-static` 이 세그먼트 fetch 를 캐시로 돌려 ISR 을 성립시킵니다.)
 - `npm run build` 의 라우트 표에서 `○`(Static/ISR)인지 `ƒ`(Dynamic)인지 확인하세요.
 - 새 **읽기 페이지**(게시글 목록/상세 등)를 추가하면 같은 두 줄로 ISR 로 만들고, **세션/쓰기 페이지**는 쿠키를 읽거나 클라이언트 fetch 로 두어 동적으로 남깁니다.
+- **Tailwind 는 빌드타임 CSS 라 렌더링 전략과 무관합니다.** `next build` 중 산출된 정적 `.css` 를 런타임엔 `<link>` 하나로 실을 뿐, 서버 fetch·동적 렌더를 유발하지 않습니다(아래 스타일 규약 참조).
+
+## 스타일 규약 — Tailwind v4 + 테마 토큰
+
+스타일은 **Tailwind v4 유틸리티 클래스**로만 표현합니다. 색·폰트는 `src/app/globals.css` 의 `@theme` 토큰이 1급 시민이고, **테넌트 브랜드색은 원큐 콘솔에서 말로 바뀝니다("버튼색 바꿔줘") — 코드 수정이 필요 없습니다.**
+
+- **테넌트 색은 토큰 경유로만.** `SiteConfig.themeColors`(콘솔 `primary`·`secondary`·`background`·`text`) → 루트 `layout.tsx` 가 `<html>` 의 CSS 변수로 주입 → 아래 유틸리티가 그 색으로 바뀝니다. **이 배선(`lib/theme.ts` + layout)을 제거·우회하지 마세요.** 색 변경에 코드 수정이 필요하면 설계 위반입니다.
+
+| 토큰 유틸리티 | 쓰임 |
+|---|---|
+| `bg-primary` · `text-primary` · `border-primary` | 테넌트 액센트(CTA·가격·강조). primary 위 글자는 `text-primary-foreground` |
+| `bg-background` · `text-foreground` | 페이지 배경·본문 글자 |
+| `text-muted` | 보조 텍스트(설명·라벨) |
+| `border-border` · `bg-surface` | 경계선·카드/필드 배경 |
+| `text-danger` | 오류 문구 |
+
+- **인라인 `style={{}}` 금지** — CSS 변수 주입(`style={{"--…"}}`)만 예외. 스타일은 클래스로 표현하세요(validator S2).
+- **색 하드코딩 금지** — `bg-[#e91e63]` 같은 임의 hex 는 콘솔의 "말로 색 바꾸기"를 무력화합니다(validator S4). 브랜드색은 `primary` 토큰으로, **중립 명도는 `slate` 스케일**(`text-slate-400` 등)만 씁니다(gray·zinc·stone 혼용 금지).
+- **CSS 파일은 `src/app/globals.css` 하나뿐** — 다른 `.css` 파일이나 CSS-in-JS·CSS Modules 를 추가하지 마세요(validator S3·S5). 웹폰트는 시스템 스택을 씁니다(외부 폰트 CDN 금지).
+- **절제** — `animate-*`·그라데이션·`backdrop-*` 은 쓰지 않습니다. 그림자는 `shadow-sm` 까지. 버튼은 `ui/Button`(링크는 `buttonClasses`), 카드는 `ui/Card`, 폼 필드는 base 가 스타일을 입히므로 맨 `<input>` 을 씁니다.
+- 레거시 죽은 토큰 `var(--oneq-*)` 참조는 금지입니다(validator S1). `--oneq-primary` → `text-primary`/`bg-primary`, `--oneq-bg` → `text-primary-foreground`.
 
 ## 설계 규약 (지켜야 하는 것)
 
@@ -92,8 +113,9 @@ npm run dev                    # http://localhost:3000
 npm run validate            # ./src 스캔. 위반 있으면 exit 1
 ```
 
-- `use client` 파일이 `@oneque/client` 를 값으로 import(baseUrl 노출)하면 오류.
-- 서버 클라이언트 싱글턴(`lib/oneque`)을 클라이언트 컴포넌트에서 import 하면 오류.
+- `use client` 파일이 `@oneque/client` 를 값으로 import(baseUrl 노출)하면 오류(E1/E2).
+- SEO 라우트가 per-page 동적 SSR 을 강제하면 오류(C1/C1b — ISR-우선 게이트).
+- 스타일 규약(위 섹션): 죽은 토큰 `var(--oneq-*)` 참조(S1)·globals.css 배선 소실(S3)은 오류, 인라인 `style={{}}`(S2)·색 하드코딩(S4)·CSS 파일 난립(S5)은 경고.
 
 ## AI 로 키우기
 

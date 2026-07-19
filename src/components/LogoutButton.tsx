@@ -3,6 +3,7 @@
 import {useTransition} from "react";
 import {useRouter} from "next/navigation";
 import {clearAuthHint} from "@/lib/useAuthHint";
+import {Button} from "@/components/ui/Button";
 
 /**
  * 로그아웃 버튼. 서버 라우트 `/api/auth/logout`(백엔드 세션 폐기 + 쿠키 삭제) 호출 후 홈으로 이동한다.
@@ -24,8 +25,8 @@ export function LogoutButton() {
     };
 
     return (
-        <button type="button" onClick={logout} disabled={pending}>
+        <Button variant="ghost" onClick={logout} disabled={pending}>
             {pending ? "로그아웃 중…" : "로그아웃"}
-        </button>
+        </Button>
     );
 }

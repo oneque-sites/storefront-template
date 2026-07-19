@@ -24,10 +24,10 @@ export default async function OrderPage({
     } catch (error) {
         const msg = error instanceof OnequeError ? error.message : "조회 실패";
         return (
-            <main>
+            <main className="py-8">
                 <h1>주문 조회</h1>
-                <p style={{color: "crimson"}}>{msg}</p>
-                <p style={{color: "#888"}}>게스트는 주소에 <code>?phone=연락처</code> 를 붙여야 합니다.</p>
+                <p className="text-danger">{msg}</p>
+                <p className="text-muted">게스트는 주소에 <code>?phone=연락처</code> 를 붙여야 합니다.</p>
             </main>
         );
     }
@@ -40,24 +40,24 @@ export default async function OrderPage({
     }
 
     return (
-        <main>
+        <main className="py-8">
             <h1>주문 {order.orderNo}</h1>
-            <p>상태: <strong>{order.status}</strong> · 결제금액 {order.totalAmount.toLocaleString()}원</p>
-            <ul>
+            <p className="mt-2">상태: <strong>{order.status}</strong> · 결제금액 {order.totalAmount.toLocaleString()}원</p>
+            <ul className="mt-4 divide-y divide-border list-none p-0">
                 {order.items.map((it, i) => (
-                    <li key={i}>
+                    <li key={i} className="py-2">
                         {it.productName}
                         {it.variantLabel ? ` · ${it.variantLabel}` : ""} × {it.quantity} — {it.lineTotal.toLocaleString()}원
                     </li>
                 ))}
             </ul>
             {shipment && (
-                <section>
+                <section className="mt-8">
                     <h2>배송 — {shipment.status}</h2>
-                    {shipment.carrierCode && <p>{shipment.carrierCode} · {shipment.trackingNo}</p>}
-                    <ul>
+                    {shipment.carrierCode && <p className="text-muted">{shipment.carrierCode} · {shipment.trackingNo}</p>}
+                    <ul className="mt-2 divide-y divide-border list-none p-0">
                         {shipment.events.map((e, i) => (
-                            <li key={i}>{e.status} · {e.description} · {e.location}</li>
+                            <li key={i} className="py-2">{e.status} · {e.description} · {e.location}</li>
                         ))}
                     </ul>
                 </section>

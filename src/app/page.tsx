@@ -17,20 +17,20 @@ export default async function Home() {
     const categories = await oneq.listProductCategories({tags: ["products"]}).catch(() => []);
 
     return (
-        <main>
+        <main className="py-8">
             {/* 사이트 주체 — 홈에 1회만(memo 50 W1). 오프라인 점포·뷰티샵 테마는 organizationJsonLd 의
                 type 을 LocalBusiness·BeautySalon 으로 좁힌다. 설정이 비면 낼 게 없으므로 생략한다. */}
             {config && <JsonLd data={organizationJsonLd(config, siteUrl())} />}
             <h1>{config?.companyName ?? fallbackSiteName()}</h1>
 
             <h2>카테고리</h2>
-            <ul>
+            <ul className="flex flex-wrap gap-2 list-none p-0">
                 {categories.map((c) => (
-                    <li key={c.id}>
-                        {c.name} <span style={{color: "#888"}}>/{c.slug}</span>
+                    <li key={c.id} className="rounded-full border border-border px-3 py-1 text-sm">
+                        {c.name} <span className="text-muted">/{c.slug}</span>
                     </li>
                 ))}
-                {categories.length === 0 && <li style={{color: "#888"}}>카테고리가 없습니다.</li>}
+                {categories.length === 0 && <li className="text-muted">카테고리가 없습니다.</li>}
             </ul>
             {/* 여기가 거래처 홈이 자랄 자리다 — 히어로·상품 그리드·예약 CTA 를 AI 로 붙인다.
                 개발자용 안내 문구는 두지 않는다: 이 골격은 거래처 사이트로 그대로 복제된다.

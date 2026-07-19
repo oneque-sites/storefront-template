@@ -12,10 +12,10 @@ export default async function LoginPage() {
     const showTest = process.env.NODE_ENV !== "production";
 
     return (
-        <main>
+        <main className="py-8">
             <h1>로그인</h1>
             {loggedIn && (
-                <p style={{color: "#888"}}>
+                <p className="text-muted">
                     이미 로그인되어 있습니다. <Link href="/mypage">마이페이지 →</Link>
                 </p>
             )}

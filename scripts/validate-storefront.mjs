@@ -14,6 +14,11 @@
  *      정당화된 예외는 파일에 `// oneq-allow-dynamic: <이유>` 마커를 두면 경고로 강등된다.
  *  C1b layout 폭발반경 게이트 — layout/template 이 **import 로 도달하는 서버 모듈**에서 동적 API 를
  *      쓰면 실패. C1 과 달리 파일 하나가 아니라 import 그래프를 본다.
+ *  S1  error   — .tsx 에서 죽은 레거시 토큰 `var(--oneq-` 참조. → `bg-primary`/`text-primary` 유틸리티로.
+ *  S2  warning — JSX 인라인 `style={{`(CSS 변수 주입 `style={{"--` 은 면제). 스타일은 유틸리티 클래스로.
+ *  S3  error   — src/app/globals.css 부재 또는 root layout 이 그걸 import 하지 않음(배선 회귀 방지).
+ *  S4  warning — className 색 임의값(`bg-[#`·`text-[#`·`border-[#`). 테넌트 색은 토큰 경유가 규약.
+ *  S5  warning — src/app/globals.css 외의 .css 파일 존재(단일 CSS 원칙).
  */
 import {readdirSync, readFileSync, statSync} from "node:fs";
 import {basename, dirname, join, relative, resolve, sep} from "node:path";
@@ -22,6 +27,7 @@ const root = process.argv[2] ?? "./src";
 const errors = [];
 const warnings = [];
 const layoutFiles = [];
+const cssFiles = [];
 let singletonFound = false;
 
 /**
@@ -70,6 +76,8 @@ function walk(dir) {
         } else if (/\.(ts|tsx|js|jsx)$/.test(name)) {
             check(full);
             if (isLayoutFile(full)) layoutFiles.push(full);
+        } else if (name.endsWith(".css")) {
+            cssFiles.push(full);
         }
     }
 }
@@ -269,7 +277,8 @@ function checkLayoutBlastRadius() {
             reported.add(key);
 
             // 면제는 **범인 파일**에 붙인다 — layout 에 붙이면 그 아래 전부가 한 번에 뚫린다.
-            const allow = readFileSync(file, "utf8").match(/\/\/\s*oneq-allow-dynamic:\s*(.+)/);
+            // `oneque?-allow-dynamic` — 신구 마커(oneq-/oneque-)를 양형 수용한다(리네임 이행기).
+            const allow = readFileSync(file, "utf8").match(/\/\/\s*oneque?-allow-dynamic:\s*(.+)/);
             const path = chain.map((f) => relative(process.cwd(), f)).join(" → ");
             const detail =
                 `${relative(process.cwd(), layout)} 이 ${why} 에 도달한다 → ${path}. ` +
@@ -314,7 +323,7 @@ function check(file) {
     if (isSeoPageFile(file) && !isClient) {
         const hits = SSR_FORBIDDEN.filter(({re}) => re.test(src)).map(({why}) => why);
         if (hits.length > 0) {
-            const allow = src.match(/\/\/\s*oneq-allow-dynamic:\s*(.+)/);
+            const allow = src.match(/\/\/\s*oneque?-allow-dynamic:\s*(.+)/);
             const detail = `${rel}: SEO 라우트가 동적SSR 을 유발한다 → ${hits.join("; ")}`;
             if (allow) {
                 warnings.push(`[C1] ${detail} — 예외 허용(oneq-allow-dynamic: ${allow[1].trim()}).`);
@@ -322,9 +331,90 @@ function check(file) {
                 errors.push(
                     `[C1] ${detail}. SEO 페이지는 ISR(export const revalidate = N) 또는 static 이어야 한다. ` +
                         `실시간·개인화 값은 클라이언트 컴포넌트(아일랜드)로, 상태 변경은 BFF route handler 로 옮겨라. ` +
-                        `동적 SSR 이 꼭 필요하면 \`// oneq-allow-dynamic: <이유>\` 마커로 정당화하라(memo31 §0-12).`,
+                        `동적 SSR 이 꼭 필요하면 \`// oneque-allow-dynamic: <이유>\` 마커로 정당화하라(memo31 §0-12).`,
                 );
             }
+        }
+    }
+
+    // ── S 규칙: 스타일 규약 ──────────────────────────────────
+    // stripComments 사본에서 검사한다(style={{·var(--oneq- 는 코드 토큰 — 문자열 값은 남겨야 잡힌다.
+    // 문자열까지 지운 사본에서 찾으면 className 안의 값이 소거돼 영원히 못 잡는다).
+    const text = stripComments(src);
+
+    // S1: 죽은 레거시 토큰. globals.css @theme 로 부활한 유틸리티로 대체해야 한다.
+    if (/\.tsx$/.test(file) && /var\(--oneq-/.test(text)) {
+        errors.push(
+            `[S1] ${rel}: 죽은 레거시 토큰 var(--oneq-*) 참조. ` +
+                `--oneq-primary → text-primary/bg-primary, --oneq-bg → text-primary-foreground 유틸리티로 대체하라(globals.css @theme).`,
+        );
+    }
+
+    // S2: JSX 인라인 style. CSS 변수 주입(style={{"--)은 정당 용례라 면제. 마커로도 억제 가능.
+    if (/style=\{\{(?!\s*["'`]--)/.test(text) && !/\/\/\s*oneque-allow-inline-style:/.test(text)) {
+        warnings.push(
+            `[S2] ${rel}: JSX 인라인 style={{…}} 사용 — 스타일은 Tailwind 유틸리티 클래스로 표현하라. ` +
+                `정당한 동적 스타일이면 \`// oneque-allow-inline-style: <이유>\` 마커로 억제하라.`,
+        );
+    }
+
+    // S4: className 색 하드코딩(임의값). 테넌트 색은 primary 토큰 경유가 규약이다.
+    if (/(?:bg|text|border)-\[#/.test(text)) {
+        warnings.push(
+            `[S4] ${rel}: className 색 임의값(bg-[#…]·text-[#…]·border-[#…]) — 브랜드색 하드코딩은 ` +
+                `콘솔의 '말로 색 바꾸기'를 무력화한다. bg-primary 등 토큰을, 중립은 slate 스케일을 쓰라.`,
+        );
+    }
+}
+
+/**
+ * S3·S5 — Tailwind 배선(단일 CSS)의 존재·정합. codegen 이 배선을 지우거나 CSS 파일을 난립시키는
+ * 회귀를 막는다. 파일 존재 + import 문자열 검사면 충분하다(§5.1).
+ */
+function checkStyleWiring() {
+    const globalsCss = join(root, "app", "globals.css");
+    let globalsOk = false;
+    try {
+        globalsOk = statSync(globalsCss).isFile();
+    } catch {
+        globalsOk = false;
+    }
+
+    if (!globalsOk) {
+        errors.push(
+            `[S3] ${relative(process.cwd(), globalsCss)} 가 없습니다 — ` +
+                `Tailwind 배선(@import "tailwindcss" + @theme 토큰)이 사라졌습니다. globals.css 를 복구하세요.`,
+        );
+    } else {
+        // root layout(app/layout.*)이 globals.css 를 import 하는지 — 안 하면 스타일이 전혀 안 실린다.
+        const rootLayout = ["layout.tsx", "layout.jsx", "layout.ts", "layout.js"]
+            .map((n) => join(root, "app", n))
+            .find((p) => {
+                try {
+                    return statSync(p).isFile();
+                } catch {
+                    return false;
+                }
+            });
+        if (rootLayout) {
+            const src = stripComments(readFileSync(rootLayout, "utf8"));
+            if (!/import\s+["'][^"']*globals\.css["']/.test(src)) {
+                errors.push(
+                    `[S3] ${relative(process.cwd(), rootLayout)} 이 globals.css 를 import 하지 않습니다 ` +
+                        `(\`import "./globals.css"\`). 배선이 없으면 Tailwind CSS·테마 토큰이 로드되지 않습니다.`,
+                );
+            }
+        }
+    }
+
+    // S5: globals.css 외의 CSS 파일 난립 방지(단일 CSS 원칙).
+    const globalsAbs = resolve(globalsCss);
+    for (const css of cssFiles) {
+        if (resolve(css) !== globalsAbs) {
+            warnings.push(
+                `[S5] ${relative(process.cwd(), css)} — src/app/globals.css 외의 CSS 파일. ` +
+                    `단일 CSS 원칙: 스타일은 Tailwind 유틸리티 클래스로, 색·폰트는 globals.css @theme 토큰으로.`,
+            );
         }
     }
 }
@@ -338,6 +428,7 @@ try {
 
 walk(root);
 checkLayoutBlastRadius(); // walk 가 layoutFiles 를 채운 뒤에.
+checkStyleWiring(); // S3·S5 — walk 가 cssFiles 를 채운 뒤에.
 if (!singletonFound) warnings.push(`[W1] createOnequeClient 싱글턴을 찾지 못했습니다 — 서버 사이드 호출 패턴이 있는지 확인하세요.`);
 
 for (const w of warnings) console.warn("⚠️  " + w);

@@ -34,25 +34,26 @@ export function LoginPanel({showTest}: {showTest: boolean}) {
     const consents = useMemo(() => buildConsents(granted), [granted]);
 
     return (
-        <div style={{display: "grid", gap: 16, maxWidth: 320}}>
-            <fieldset style={{border: "1px solid #eee", borderRadius: 8, padding: 12, margin: 0}}>
-                <legend style={{padding: "0 6px", color: "#555"}}>약관 동의</legend>
+        <div className="grid gap-4 max-w-xs">
+            <fieldset className="rounded-xl border border-border p-4 m-0">
+                <legend className="px-1.5 text-muted">약관 동의</legend>
 
-                <label style={{display: "flex", alignItems: "center", gap: 8, fontWeight: 600, paddingBottom: 8}}>
-                    <input type="checkbox" checked={allChecked} onChange={toggleAll} />
+                <label className="flex items-center gap-2 font-semibold pb-2">
+                    <input type="checkbox" className="w-auto" checked={allChecked} onChange={toggleAll} />
                     전체 동의
                 </label>
 
-                <div style={{borderTop: "1px solid #f0f0f0", paddingTop: 8, display: "grid", gap: 6}}>
+                <div className="border-t border-border pt-2 grid gap-1.5">
                     {CONSENT_ITEMS.map((item) => (
-                        <label key={item.type} style={{display: "flex", alignItems: "center", gap: 8}}>
+                        <label key={item.type} className="flex items-center gap-2">
                             <input
                                 type="checkbox"
+                                className="w-auto"
                                 checked={granted.has(item.type)}
                                 onChange={() => toggle(item.type)}
                             />
                             <span>
-                                <span style={{color: item.required ? "crimson" : "#888"}}>
+                                <span className={item.required ? "text-danger" : "text-muted"}>
                                     [{item.required ? "필수" : "선택"}]
                                 </span>{" "}
                                 {item.label}
@@ -62,7 +63,7 @@ export function LoginPanel({showTest}: {showTest: boolean}) {
                 </div>
 
                 {!ready && (
-                    <p style={{color: "#888", fontSize: "0.85rem", marginTop: 8, marginBottom: 0}}>
+                    <p className="text-muted text-sm mt-2">
                         가입을 진행하려면 필수 약관에 모두 동의해 주세요.
                     </p>
                 )}

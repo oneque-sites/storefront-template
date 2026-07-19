@@ -17,26 +17,22 @@ export function SiteHeader() {
     const loggedIn = useAuthHint();
 
     return (
-        <header
-            style={{
-                display: "flex",
-                gap: 12,
-                alignItems: "center",
-                paddingBottom: 12,
-                marginBottom: 16,
-                borderBottom: "1px solid #eee",
-            }}
-        >
-            <Link href="/">홈</Link>
+        <header className="flex items-center gap-4 border-b border-border pb-3 mb-8">
+            <Link href="/" className="font-semibold no-underline">
+                홈
+            </Link>
             <Link href="/cart">장바구니</Link>
-            <span style={{marginLeft: "auto"}} />
             {loggedIn ? (
                 <>
-                    <Link href="/mypage">마이페이지</Link>
+                    <Link href="/mypage" className="ms-auto">
+                        마이페이지
+                    </Link>
                     <LogoutButton />
                 </>
             ) : (
-                <Link href="/login">로그인</Link>
+                <Link href="/login" className="ms-auto">
+                    로그인
+                </Link>
             )}
         </header>
     );

@@ -2,6 +2,7 @@
 
 import {useEffect, useRef, useState} from "react";
 import {ANONYMOUS, loadTossPayments} from "@tosspayments/tosspayments-sdk";
+import {Button} from "@/components/ui/Button";
 
 type Widgets = ReturnType<Awaited<ReturnType<typeof loadTossPayments>>["widgets"]>;
 
@@ -82,10 +83,10 @@ export default function PaymentWidgetPage() {
         }
     };
 
-    if (descriptor === undefined) return <main><p>불러오는 중…</p></main>;
+    if (descriptor === undefined) return <main className="py-8"><p>불러오는 중…</p></main>;
     if (descriptor === null) {
         return (
-            <main>
+            <main className="py-8">
                 <h1>결제 정보를 찾을 수 없습니다</h1>
                 <p>결제를 처음부터 다시 시작해 주세요.</p>
                 <a href="/checkout">결제 페이지로</a>
@@ -94,14 +95,14 @@ export default function PaymentWidgetPage() {
     }
 
     return (
-        <main>
+        <main className="py-8">
             <h1>결제</h1>
             <div id="payment-method" />
             <div id="agreement" />
-            <button type="button" onClick={pay} disabled={!ready || paying}>
+            <Button onClick={pay} disabled={!ready || paying}>
                 {paying ? "처리 중…" : `${Number(descriptor.amount).toLocaleString()}원 결제하기`}
-            </button>
-            {error && <p style={{color: "crimson"}}>{error}</p>}
+            </Button>
+            {error && <p className="text-danger mt-2">{error}</p>}
         </main>
     );
 }

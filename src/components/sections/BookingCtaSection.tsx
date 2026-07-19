@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type {ProductSummary} from "@oneque/client";
+import {buttonClasses} from "@/components/ui/Button";
 import {asId, asString, parseConfig} from "./parse";
 
 type BookingCtaConfig = Record<string, unknown>;
@@ -19,19 +20,8 @@ export function BookingCtaSection({
     if (!product) return null;
 
     return (
-        <section style={{marginBottom: 32, textAlign: "center"}}>
-            <Link
-                href={`/products/${product.slug}`}
-                style={{
-                    display: "inline-block",
-                    padding: "14px 32px",
-                    borderRadius: 8,
-                    background: "var(--oneq-primary)",
-                    color: "var(--oneq-bg)",
-                    fontWeight: 600,
-                    textDecoration: "none",
-                }}
-            >
+        <section className="mb-12 text-center">
+            <Link href={`/products/${product.slug}`} className={buttonClasses("primary", "no-underline")}>
                 {asString(c?.label)?.trim() || "예약하기"}
             </Link>
         </section>
