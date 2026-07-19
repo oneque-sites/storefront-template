@@ -2,12 +2,12 @@
  * 이 사이트의 공개 절대 URL. JSON-LD·sitemap·robots 는 상대경로를 쓸 수 없다 —
  * 크롤러가 절대 URL 로 정규화해 읽기 때문이다(memo 50 W1).
  *
- * env `ONEQ_SITE_URL` 로 주입한다(예: https://shop.example.com). 미설정이면 로컬 기본값이라
+ * env `ONEQUE_SITE_URL` 로 주입한다(예: https://shop.example.com). 미설정이면 로컬 기본값이라
  * **배포 전 반드시 설정**해야 한다 — 안 그러면 sitemap 이 localhost 를 가리킨다.
  * 끝의 `/` 는 벗겨서 `${siteUrl()}/products/x` 가 항상 슬래시 1개가 되게 한다.
  */
 export function siteUrl(): string {
-    return (process.env.ONEQ_SITE_URL ?? "http://localhost:3000").replace(/\/+$/, "");
+    return (process.env.ONEQUE_SITE_URL ?? "http://localhost:3000").replace(/\/+$/, "");
 }
 
 /**
@@ -26,7 +26,7 @@ export function fallbackSiteName(): string {
     try {
         return new URL(siteUrl()).hostname;
     } catch {
-        // ONEQ_SITE_URL 오타(스킴 누락 등)로 전 라우트 metadata 가 500 나면 안 된다 — sitemap 이
+        // ONEQUE_SITE_URL 오타(스킴 누락 등)로 전 라우트 metadata 가 500 나면 안 된다 — sitemap 이
         // 이미 깨졌겠지만 그건 그쪽에서 드러날 일이고, 폴백 제목 하나가 사이트를 죽일 이유는 없다.
         return siteUrl();
     }

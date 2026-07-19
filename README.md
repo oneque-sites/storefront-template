@@ -21,12 +21,12 @@
 ## 실행
 
 ```bash
-cp .env.example .env.local     # ONEQ_API_BASE·ONEQ_TENANT 채우기
+cp .env.example .env.local     # ONEQUE_API_BASE·ONEQUE_TENANT 채우기
 npm install
 npm run dev                    # http://localhost:3000
 ```
 
-백엔드(기본 http://localhost:8100)가 떠 있어야 하고, `ONEQ_TENANT` 에 이 사이트의 테넌트 코드를 넣는다.
+백엔드(기본 http://localhost:8100)가 떠 있어야 하고, `ONEQUE_TENANT` 에 이 사이트의 테넌트 코드를 넣는다.
 
 ## 렌더링 전략 — 정적/ISR 우선
 

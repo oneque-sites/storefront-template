@@ -6,18 +6,18 @@ import {revalidatePath, revalidateTag} from "next/cache";
  * SEO 페이지는 per-request SSR 하지 않고 CDN 캐시를 서빙하되, **백엔드 데이터가 바뀌면**
  * 백엔드가 이 엔드포인트를 호출해 해당 path/tag 의 캐시를 무효화한다(발행·상품변경 훅).
  *
- * 인증: 공유 시크릿 헤더(`x-oneq-revalidate-secret` == env `ONEQ_REVALIDATE_SECRET`).
+ * 인증: 공유 시크릿 헤더(`x-oneque-revalidate-secret` == env `ONEQUE_REVALIDATE_SECRET`).
  * 시크릿 미설정이면 안전을 위해 비활성(503). 이 라우트는 상태를 바꾸지 않는 서버 함수라
  * SEO 라우트가 아니다(validator ISR 게이트 대상 아님 — api/ 는 제외).
  *
  * body: { paths?: string[], tags?: string[] }  →  { revalidated: true, paths, tags }
  */
 export async function POST(req: Request) {
-    const secret = process.env.ONEQ_REVALIDATE_SECRET;
+    const secret = process.env.ONEQUE_REVALIDATE_SECRET;
     if (!secret) {
-        return NextResponse.json({message: "ONEQ_REVALIDATE_SECRET 미설정 — revalidate 비활성."}, {status: 503});
+        return NextResponse.json({message: "ONEQUE_REVALIDATE_SECRET 미설정 — revalidate 비활성."}, {status: 503});
     }
-    if (req.headers.get("x-oneq-revalidate-secret") !== secret) {
+    if (req.headers.get("x-oneque-revalidate-secret") !== secret) {
         return NextResponse.json({message: "invalid secret"}, {status: 401});
     }
 

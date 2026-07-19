@@ -10,8 +10,8 @@
  * 없으면 크게 실패하는 게 맞다(빌드·기동 시점에 터진다).
  */
 export function tenantCode(): string {
-    const value = process.env.ONEQ_TENANT;
-    if (!value) throw new Error("ONEQ_TENANT 가 설정되지 않았습니다 — .env.local 을 확인하세요.");
+    const value = process.env.ONEQUE_TENANT;
+    if (!value) throw new Error("ONEQUE_TENANT 가 설정되지 않았습니다 — .env.local 을 확인하세요.");
     return value;
 }
 
@@ -20,5 +20,5 @@ export function tenantCode(): string {
  * localhost 는 남의 데이터를 줄 수 없어서 [tenantCode] 와 위험도가 다르다.
  */
 export function apiBase(): string {
-    return process.env.ONEQ_API_BASE ?? "http://localhost:8100";
+    return process.env.ONEQUE_API_BASE ?? "http://localhost:8100";
 }
