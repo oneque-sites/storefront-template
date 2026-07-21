@@ -22,6 +22,43 @@ const COLOR_KEYS: ReadonlyArray<readonly [string, string]> = [
     ["text", "--color-foreground"],
 ];
 
+/*
+ * ── 전역 토큰 knob (memo69 §2.1 · 계약버전 2) ──────────────────────────────
+ * 색과 달리 knob 은 **enum**이다. 백엔드 `site.theme.update` 화이트리스트가 허용값만 저장하지만,
+ * 여기서도 매핑 테이블 lookup 으로 한 번 더 봉한다: **사용자 문자열은 어떤 경로로도 style 에 실리지
+ * 않는다** — enum 은 테이블 key 조회뿐이고, 없는 값(오염·구버전)은 조용히 버려 @theme 기본값을 유지한다.
+ * 이 값들은 백엔드 enum(FONTS/RADII/DENSITIES)과 반드시 일치해야 한다(계약).
+ */
+
+/** 시스템 폰트 스택(globals.css --font-sans 와 동일 — system knob 의 기본값). */
+const SYSTEM_STACK =
+    'ui-sans-serif, system-ui, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif';
+
+/*
+ * font: --font-sans 스택 교체.
+ * TODO(memo69 §2.1 후속): pretendard·noto-serif-kr 의 self-host `@font-face` woff2 서브셋 자산 번들링.
+ * 지금은 폰트 **패밀리명만** 스택 앞에 얹어, 사용자 환경에 설치돼 있으면 쓰고 없으면 폴백한다
+ * (외부 CDN 0 유지). 자산이 동봉되면 여기 매핑은 그대로 두고 globals.css 에 @font-face 만 추가하면 된다.
+ */
+const FONTS: Readonly<Record<string, string>> = {
+    system: SYSTEM_STACK,
+    pretendard: `"Pretendard", ${SYSTEM_STACK}`,
+    "noto-serif-kr": '"Noto Serif KR", ui-serif, Georgia, "Nanum Myeongjo", serif',
+};
+
+/** radius: --radius-knob 무단위 배수(globals.css radius 스케일이 곱한다). soft=1 이 Tailwind 기본과 일치. */
+const RADII: Readonly<Record<string, string>> = {sharp: "0", soft: "1", round: "2"};
+
+/** density: --spacing 베이스(Tailwind v4 기본 0.25rem). 전 spacing 유틸리티가 일괄 스케일. */
+const DENSITIES: Readonly<Record<string, string>> = {compact: "0.22rem", cozy: "0.25rem"};
+
+/** knob 키 → CSS 변수 → enum 매핑 테이블. */
+const KNOB_KEYS: ReadonlyArray<readonly [string, string, Readonly<Record<string, string>>]> = [
+    ["font", "--font-sans", FONTS],
+    ["radius", "--radius-knob", RADII],
+    ["density", "--spacing", DENSITIES],
+];
+
 export interface ParsedTheme {
     /** `<html style={...}>` 에 그대로 얹을 CSS 변수 맵. 오버라이드가 없으면 빈 객체(기본 테마 유지). */
     cssVars: Record<string, string>;
@@ -53,6 +90,15 @@ export function parseThemeColors(raw: string | null | undefined): ParsedTheme {
     // 서버가 산출해 함께 주입한다(테넌트가 밝은 액센트를 골라도 CTA 글자가 안 죽는다).
     if (primaryHex) {
         cssVars["--color-primary-foreground"] = onColor(primaryHex);
+    }
+
+    // 전역 토큰 knob(font·radius·density) — 매핑 테이블 lookup 만. hasOwnProperty 로 own key 만 채택해
+    // 프로토타입 오염(constructor 등)·오염 문자열을 차단한다(사용자 문자열이 style 에 실리지 않는다).
+    for (const [key, cssVar, table] of KNOB_KEYS) {
+        const value = src[key];
+        if (typeof value === "string" && Object.prototype.hasOwnProperty.call(table, value)) {
+            cssVars[cssVar] = table[value];
+        }
     }
 
     return {cssVars};
