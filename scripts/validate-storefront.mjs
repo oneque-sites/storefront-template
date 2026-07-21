@@ -19,6 +19,20 @@
  *  S3  error   — src/app/globals.css 부재 또는 root layout 이 그걸 import 하지 않음(배선 회귀 방지).
  *  S4  warning — className 색 임의값(`bg-[#`·`text-[#`·`border-[#`). 테넌트 색은 토큰 경유가 규약.
  *  S5  warning — src/app/globals.css 외의 .css 파일 존재(단일 CSS 원칙).
+ *
+ * ── 스택 조건화(memo75) ──────────────────────────────────────────
+ * E1/E2/W1(헤드리스 계약·스택무관)·C1/C1b(Next App Router 전제)는 **상시** 적용한다.
+ * S1~S5(Tailwind+토큰 전제)는 레포의 스택 선언에 따라 3모드로 게이팅한다(선두에서 1회 판정):
+ *
+ *   모드       판정                                               S1  S2  S3  S4  S5
+ *   declared   package.json oneque.styling === "tailwind-tokens"  E   E   E   E   W    (토큰 계약 모드)
+ *   inferred   선언 부재 + deps/devDeps 에 tailwindcss 있음        W   W   W   W   W    (위생 모드)
+ *   none       그 외(다른 선언값·tailwindcss 도 없음)             –   –   –   –   –    (스킵)
+ *
+ * declared 는 Managed 토큰 계약 라인이라 S2/S4 를 error 로 격상한다(리터럴 색·인라인 style 이
+ * '말로 색 바꾸기'를 무력화하는 라인). inferred(우리 계약 미선언 Tailwind 레포)는 경고까지만,
+ * none(vanilla·bootstrap 등)은 인라인·리터럴이 그 레포의 정상이라 S 전부 스킵한다.
+ * 마커(oneque-allow-inline-style·oneq(ue)-allow-dynamic)·CSS변수 주입 면제는 모든 모드에서 유지.
  */
 import {readdirSync, readFileSync, statSync} from "node:fs";
 import {basename, dirname, join, relative, resolve, sep} from "node:path";
@@ -29,6 +43,50 @@ const warnings = [];
 const layoutFiles = [];
 const cssFiles = [];
 let singletonFound = false;
+
+/**
+ * 스타일 규약 모드 판정(memo75 §5) — validator 선두에서 1회. srcDir 상위 최근접 package.json 의
+ * `oneque.styling` 선언을 읽는다:
+ *   declared : oneque.styling === "tailwind-tokens"          → 토큰 계약 모드(S2/S4 error 격상)
+ *   inferred : 선언 부재 + deps/devDeps 에 tailwindcss 있음   → 위생 모드(S 전부 warning)
+ *   none     : 그 외(다른 선언값·tailwindcss 도 없음)         → S 전부 스킵
+ * package.json 을 못 찾거나 파싱 실패하면 none(안전 — S 안 들이댄다).
+ * 백엔드는 스택을 모른다 — 선언은 레포 안에 살고 validator 가 현장에서 읽는다(memo75 §2).
+ */
+function detectStyleMode(srcDir) {
+    let dir = resolve(srcDir);
+    for (let i = 0; i < 12; i++) {
+        const pkgPath = join(dir, "package.json");
+        try {
+            if (statSync(pkgPath).isFile()) {
+                const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
+                const styling = pkg?.oneque?.styling;
+                if (styling === "tailwind-tokens") return "declared";
+                if (styling !== undefined) return "none"; // 검사 규칙 없는 다른 선언값 = 원큐 스타일 규약 없음
+                const deps = {...(pkg.dependencies ?? {}), ...(pkg.devDependencies ?? {})};
+                return Object.prototype.hasOwnProperty.call(deps, "tailwindcss") ? "inferred" : "none";
+            }
+        } catch {
+            /* 부재·파싱 실패 — 상위 디렉터리로 */
+        }
+        const parent = dirname(dir);
+        if (parent === dir) break;
+        dir = parent;
+    }
+    return "none";
+}
+
+const STYLE_MODE = detectStyleMode(root);
+
+/**
+ * S 규칙 위반을 담을 배열을 모드별 심각도로 고른다. null 이면 스킵(none 모드).
+ *   declared → S1~S4 는 errors, S5 는 warnings / inferred → 전부 warnings / none → null(스킵)
+ */
+function styleSink(rule) {
+    if (STYLE_MODE === "none") return null;
+    if (STYLE_MODE === "declared") return rule === "S5" ? warnings : errors;
+    return warnings; // inferred — 전부 경고
+}
 
 /**
  * ISR-우선 게이트 대상에서 빼는 라우트 세그먼트(app 하위 디렉터리명).
@@ -343,24 +401,27 @@ function check(file) {
     const text = stripComments(src);
 
     // S1: 죽은 레거시 토큰. globals.css @theme 로 부활한 유틸리티로 대체해야 한다.
-    if (/\.tsx$/.test(file) && /var\(--oneq-/.test(text)) {
-        errors.push(
+    const s1 = styleSink("S1");
+    if (s1 && /\.tsx$/.test(file) && /var\(--oneq-/.test(text)) {
+        s1.push(
             `[S1] ${rel}: 죽은 레거시 토큰 var(--oneq-*) 참조. ` +
                 `--oneq-primary → text-primary/bg-primary, --oneq-bg → text-primary-foreground 유틸리티로 대체하라(globals.css @theme).`,
         );
     }
 
-    // S2: JSX 인라인 style. CSS 변수 주입(style={{"--)은 정당 용례라 면제. 마커로도 억제 가능.
-    if (/style=\{\{(?!\s*["'`]--)/.test(text) && !/\/\/\s*oneque-allow-inline-style:/.test(text)) {
-        warnings.push(
+    // S2: JSX 인라인 style. CSS 변수 주입(style={{"--)은 정당 용례라 면제. 마커로도 억제 가능(모든 모드).
+    const s2 = styleSink("S2");
+    if (s2 && /style=\{\{(?!\s*["'`]--)/.test(text) && !/\/\/\s*oneque-allow-inline-style:/.test(text)) {
+        s2.push(
             `[S2] ${rel}: JSX 인라인 style={{…}} 사용 — 스타일은 Tailwind 유틸리티 클래스로 표현하라. ` +
                 `정당한 동적 스타일이면 \`// oneque-allow-inline-style: <이유>\` 마커로 억제하라.`,
         );
     }
 
     // S4: className 색 하드코딩(임의값). 테넌트 색은 primary 토큰 경유가 규약이다.
-    if (/(?:bg|text|border)-\[#/.test(text)) {
-        warnings.push(
+    const s4 = styleSink("S4");
+    if (s4 && /(?:bg|text|border)-\[#/.test(text)) {
+        s4.push(
             `[S4] ${rel}: className 색 임의값(bg-[#…]·text-[#…]·border-[#…]) — 브랜드색 하드코딩은 ` +
                 `콘솔의 '말로 색 바꾸기'를 무력화한다. bg-primary 등 토큰을, 중립은 slate 스케일을 쓰라.`,
         );
@@ -373,48 +434,56 @@ function check(file) {
  */
 function checkStyleWiring() {
     const globalsCss = join(root, "app", "globals.css");
-    let globalsOk = false;
-    try {
-        globalsOk = statSync(globalsCss).isFile();
-    } catch {
-        globalsOk = false;
-    }
 
-    if (!globalsOk) {
-        errors.push(
-            `[S3] ${relative(process.cwd(), globalsCss)} 가 없습니다 — ` +
-                `Tailwind 배선(@import "tailwindcss" + @theme 토큰)이 사라졌습니다. globals.css 를 복구하세요.`,
-        );
-    } else {
-        // root layout(app/layout.*)이 globals.css 를 import 하는지 — 안 하면 스타일이 전혀 안 실린다.
-        const rootLayout = ["layout.tsx", "layout.jsx", "layout.ts", "layout.js"]
-            .map((n) => join(root, "app", n))
-            .find((p) => {
-                try {
-                    return statSync(p).isFile();
-                } catch {
-                    return false;
+    // S3: Tailwind 배선(globals.css 존재 + root layout import). none 모드는 스킵.
+    const s3 = styleSink("S3");
+    if (s3) {
+        let globalsOk = false;
+        try {
+            globalsOk = statSync(globalsCss).isFile();
+        } catch {
+            globalsOk = false;
+        }
+
+        if (!globalsOk) {
+            s3.push(
+                `[S3] ${relative(process.cwd(), globalsCss)} 가 없습니다 — ` +
+                    `Tailwind 배선(@import "tailwindcss" + @theme 토큰)이 사라졌습니다. globals.css 를 복구하세요.`,
+            );
+        } else {
+            // root layout(app/layout.*)이 globals.css 를 import 하는지 — 안 하면 스타일이 전혀 안 실린다.
+            const rootLayout = ["layout.tsx", "layout.jsx", "layout.ts", "layout.js"]
+                .map((n) => join(root, "app", n))
+                .find((p) => {
+                    try {
+                        return statSync(p).isFile();
+                    } catch {
+                        return false;
+                    }
+                });
+            if (rootLayout) {
+                const src = stripComments(readFileSync(rootLayout, "utf8"));
+                if (!/import\s+["'][^"']*globals\.css["']/.test(src)) {
+                    s3.push(
+                        `[S3] ${relative(process.cwd(), rootLayout)} 이 globals.css 를 import 하지 않습니다 ` +
+                            `(\`import "./globals.css"\`). 배선이 없으면 Tailwind CSS·테마 토큰이 로드되지 않습니다.`,
+                    );
                 }
-            });
-        if (rootLayout) {
-            const src = stripComments(readFileSync(rootLayout, "utf8"));
-            if (!/import\s+["'][^"']*globals\.css["']/.test(src)) {
-                errors.push(
-                    `[S3] ${relative(process.cwd(), rootLayout)} 이 globals.css 를 import 하지 않습니다 ` +
-                        `(\`import "./globals.css"\`). 배선이 없으면 Tailwind CSS·테마 토큰이 로드되지 않습니다.`,
-                );
             }
         }
     }
 
-    // S5: globals.css 외의 CSS 파일 난립 방지(단일 CSS 원칙).
-    const globalsAbs = resolve(globalsCss);
-    for (const css of cssFiles) {
-        if (resolve(css) !== globalsAbs) {
-            warnings.push(
-                `[S5] ${relative(process.cwd(), css)} — src/app/globals.css 외의 CSS 파일. ` +
-                    `단일 CSS 원칙: 스타일은 Tailwind 유틸리티 클래스로, 색·폰트는 globals.css @theme 토큰으로.`,
-            );
+    // S5: globals.css 외의 CSS 파일 난립 방지(단일 CSS 원칙). none 모드는 스킵.
+    const s5 = styleSink("S5");
+    if (s5) {
+        const globalsAbs = resolve(globalsCss);
+        for (const css of cssFiles) {
+            if (resolve(css) !== globalsAbs) {
+                s5.push(
+                    `[S5] ${relative(process.cwd(), css)} — src/app/globals.css 외의 CSS 파일. ` +
+                        `단일 CSS 원칙: 스타일은 Tailwind 유틸리티 클래스로, 색·폰트는 globals.css @theme 토큰으로.`,
+                );
+            }
         }
     }
 }
@@ -431,6 +500,14 @@ checkLayoutBlastRadius(); // walk 가 layoutFiles 를 채운 뒤에.
 checkStyleWiring(); // S3·S5 — walk 가 cssFiles 를 채운 뒤에.
 if (!singletonFound) warnings.push(`[W1] createOnequeClient 싱글턴을 찾지 못했습니다 — 서버 사이드 호출 패턴이 있는지 확인하세요.`);
 
+console.log(
+    `스타일 규약 모드: ${STYLE_MODE}` +
+        (STYLE_MODE === "declared"
+            ? " (tailwind-tokens 계약 — S2/S4 error 격상)"
+            : STYLE_MODE === "inferred"
+              ? " (tailwindcss 추론 — S 전부 warning)"
+              : " (스택 미선언 — S 규칙 스킵)"),
+);
 for (const w of warnings) console.warn("⚠️  " + w);
 for (const e of errors) console.error("❌ " + e);
 
